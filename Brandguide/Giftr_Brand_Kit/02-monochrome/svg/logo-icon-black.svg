@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 220 200" role="img" aria-label="Giftr icon mark">
+    
+    <defs>
+      <linearGradient id="giftGrad" x1="52" y1="56" x2="192" y2="180" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#0EA5E9"/>
+        <stop offset="0.42" stop-color="#14B8A6"/>
+        <stop offset="1" stop-color="#0D9488"/>
+      </linearGradient>
+      <linearGradient id="appGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#0EA5E9"/>
+        <stop offset="0.55" stop-color="#14B8A6"/>
+        <stop offset="1" stop-color="#0D9488"/>
+      </linearGradient>
+      <mask id="cutoutMask" maskUnits="userSpaceOnUse">
+        <rect x="0" y="0" width="240" height="220" fill="white"/>
+        <path d="M75 90 H122 C135 90 144 99 144 111 C144 124 134 132 120 132 H105 V156 H85 V132 H70 C61 132 55 126 55 117 C55 108 62 102 72 102 H94 V94 C94 92 92 90 89 90 Z" fill="black"/>
+      </mask>
+    </defs>
+    
+    <g id="giftr-icon">
+      <g fill="none" stroke="#000000" stroke-linecap="round" stroke-width="10">
+        <path d="M18 74 H68"/>
+        <path d="M2 102 H57"/>
+        <path d="M26 130 H70"/>
+      </g>
+      <path d="M77 68 C77 54 88 44 102 44 H160 C178 44 190 58 190 76 V145 C190 166 174 180 153 180 H84 C63 180 49 166 49 145 V101 C49 83 61 70 77 68 Z" fill="#000000"/>
+      <path d="M70 88 H117 C132 88 142 98 142 111 C142 124 132 134 117 134 H103 V158 H83 V134 H68 C58 134 51 127 51 117 C51 107 58 100 68 100 H93 V94 C93 90 89 88 85 88 Z" fill="#FFFFFF" opacity="0.98"/>
+      <g fill="none" stroke="#000000" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M104 65 C91 51 91 34 105 31 C121 28 132 45 133 66"/>
+        <path d="M136 66 C141 45 156 35 169 42 C183 50 176 66 154 67"/>
+        <path d="M103 67 H164"/>
+      </g>
+      <path d="M205 49 L211 64 L226 70 L211 76 L205 91 L199 76 L184 70 L199 64 Z" fill="#000000" transform="translate(-6,-6)"/>
+    </g>
+    
+    </svg>

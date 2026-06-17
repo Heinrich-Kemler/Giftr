@@ -1,0 +1,20 @@
+:root {
+  --giftr-primary-teal: #14B8A6;
+  --giftr-aqua: #06B6D4;
+  --giftr-sky-blue: #168DE2;
+  --giftr-tangerine: #FF7A00;
+  --giftr-accent-orange: #FFA24D;
+  --giftr-navy: #0F172A;
+  --giftr-slate-700: #334155;
+  --giftr-slate-500: #64748B;
+  --giftr-slate-300: #CBD5E1;
+  --giftr-slate-200: #E2E8F0;
+  --giftr-slate-100: #F1F5F9;
+  --giftr-soft-mint: #E6FAF5;
+  --giftr-success: #22C55E;
+  --giftr-pending: #F59E0B;
+  --giftr-error: #EF4444;
+  --giftr-periwinkle: #6366F1;
+  --giftr-white: #FFFFFF;
+  --giftr-black: #000000;
+}

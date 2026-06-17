@@ -1,0 +1,20 @@
+{
+  "primary_teal": "#14B8A6",
+  "aqua": "#06B6D4",
+  "sky_blue": "#168DE2",
+  "tangerine": "#FF7A00",
+  "accent_orange": "#FFA24D",
+  "navy": "#0F172A",
+  "slate_700": "#334155",
+  "slate_500": "#64748B",
+  "slate_300": "#CBD5E1",
+  "slate_200": "#E2E8F0",
+  "slate_100": "#F1F5F9",
+  "soft_mint": "#E6FAF5",
+  "success": "#22C55E",
+  "pending": "#F59E0B",
+  "error": "#EF4444",
+  "periwinkle": "#6366F1",
+  "white": "#FFFFFF",
+  "black": "#000000"
+}
