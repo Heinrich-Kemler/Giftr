@@ -60,6 +60,9 @@ email. It supports two flows:
 | `BITREFILL_API_KEY` | No (unless live) | Bitrefill API key. Not needed when `BITREFILL_MOCK=true`. |
 | `BITREFILL_API_SECRET` | No (unless live) | Bitrefill API secret. Not needed when `BITREFILL_MOCK=true`. |
 | `BITREFILL_API_BASE` | No | Bitrefill API base URL. Defaults to the v2 endpoint. |
+| `BITREFILL_PAYMENT_METHOD` | No | Live Bitrefill payment method. Defaults to `balance`. |
+| `BITREFILL_BALANCE_CURRENCY` | No | Balance sub-account currency for account-balance checkout. Defaults to `EUR`. |
+| `BITREFILL_USER_AGENT` | No | User-Agent sent to Bitrefill. Defaults to this GitHub repo URL. |
 | `BITREFILL_MOCK` | No | Set to `true` to bypass real Bitrefill calls. |
 | `NEXT_PUBLIC_BASE_URL` | No | Base URL used to build absolute links. |
 

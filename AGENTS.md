@@ -15,16 +15,18 @@ off work.
 | Overall | App built and reviewed; demo-ready in mock mode | See "Scope note" below re: the real-purchase submission requirement. |
 | Build prompt | Executed | App built from the provided build spec (Personal Gift + Community Raffle). |
 | Source files | Present | All spec files exist under `app/`, `components/`, `lib/`, `supabase/`. |
-| Git | Not initialized | Not a git repository. Run `git init` before preparing the public repo. |
+| Git | Published | Public repo: `https://github.com/Heinrich-Kemler/Giftr` (`main`). |
 | Build validation | Passing | `npm run build` exits 0 with no env vars (13 routes); `npx tsc --noEmit` clean. |
 | Dev validation | Passing | `npm run dev` starts clean (Ready in ~9s, no errors). |
 | Demo readiness | Ready (mock) | Runs end-to-end in mock mode; needs a Supabase project + migration for storage. |
 
-**Scope note:** The build spec implements a simpler Bitrefill flow than the full
-hackathon submission criteria captured in Section 7. The current app does
-search -> AI select -> create order -> email, mock-first. It does NOT yet do a
-real (non-mock) autonomous purchase with delivery polling + redemption info via
-Bitrefill's live API/MCP. That gap is tracked as I01/I05 for the human to close.
+**Scope note:** The live (non-mock) Bitrefill flow is now implemented in
+`lib/bitrefill.ts`: Bearer auth + real User-Agent against `api.bitrefill.com/v2`,
+`POST /invoices` with `payment_method`/`balance_currency`/`auto_pay`, polling the
+order until `orders[0].status === "delivered"` && `redemption_available`, then
+reading `redemption_info`. It is build- and mock-verified but NOT yet verified
+against the live API (no credentials/test credits in this environment). That
+final live verification is tracked as T05/I01.
 
 ## 3. Source State Observed
 
@@ -44,9 +46,9 @@ Bitrefill's live API/MCP. That gap is tracked as I01/I05 for the human to close.
 | T02 | Claude | Review app, confirm build/dev start clean | done | 10-dimension review + adversarial verify; 9 issues fixed. |
 | T03 | Claude | Complete demo QA checklist | done | Mock mode exercised live. |
 | T04 | Claude | Write Demo Script section | done | See Section 12. |
-| T05 | Human/Claude | Real autonomous Bitrefill purchase (non-mock), MCP preferred, with delivery polling + redemption info | open | Needs real creds/test credits; see Section 7. Beyond the build spec. |
+| T05 | Human/Claude | Real autonomous Bitrefill purchase (non-mock) with delivery polling + redemption info | code complete; pending live verification | Live REST flow implemented in `lib/bitrefill.ts`; needs real creds/test credits to verify end-to-end. |
 | T06 | Human | Ask Bitrefill mentor for test credits | open | Required for the `balance` checkout demo path. |
-| T07 | Human/Claude | Public GitHub URL + <=4 minute video | open | Required for submission. |
+| T07 | Human/Claude | Public GitHub URL + <=4 minute video | partial | Public repo ready; video still required for submission. |
 
 ## 5. Validation Checklist
 
@@ -67,20 +69,20 @@ Bitrefill's live API/MCP. That gap is tracked as I01/I05 for the human to close.
 ### Hackathon Submission (from Section 7 research)
 
 - [ ] Autonomous Bitrefill purchase demonstrated end-to-end (real, not only mock) — T05
-- [ ] Agent searches, buys, pays, polls delivery, and reveals redemption info — partial (search/buy/email done; polling + redemption_info NOT implemented)
-- [ ] Bitrefill MCP or REST integration documented; MCP preferred — REST shape implemented (placeholder host); MCP not wired
+- [x] Agent searches, buys, pays, polls delivery, and reads redemption info — implemented in `lib/bitrefill.ts` (live path); pending live verification (T05)
+- [ ] Bitrefill MCP or REST integration documented; MCP preferred — REST shape implemented against `https://api.bitrefill.com/v2`; endpoint paths still unverified; MCP not wired
 - [x] Landing page / app interface explains the project and links to the flows
-- [ ] Public GitHub URL ready — T07
+- [x] Public GitHub URL ready — `https://github.com/Heinrich-Kemler/Giftr`
 - [ ] Video demo recorded, 4 minutes maximum — T07
 - [ ] Real Bitrefill test path verified, not only local mock mode — T05
 
 ### Bitrefill Integration Safety (from Section 7 research)
 
-- [ ] `payment_method="balance"` uses `balance_currency`, such as `EUR` — not implemented (current REST order body sends `{product_id,value,currency,email}`)
-- [ ] Polling checks `orders[0].status === "delivered"` and `orders[0].redemption_available === true` — not implemented
-- [ ] Code does not wait only on top-level invoice status — n/a (no polling yet)
-- [ ] `invoice_id` and `order_id` are kept distinct — n/a (no invoice flow yet)
-- [ ] Custom HTTP clients send a real `User-Agent` header — NOT set in `lib/bitrefill.ts` `fetchWithTimeout`; add for live REST
+- [x] `payment_method="balance"` uses `balance_currency`, such as `EUR` — implemented in live REST order body; live endpoint still unverified
+- [x] Polling checks `orders[0].status === "delivered"` and `orders[0].redemption_available === true` — implemented in `createOrder`
+- [x] Code does not wait only on top-level invoice status — reads per-order status, ignores invoice rollups
+- [x] `invoice_id` and `order_id` are kept distinct — `extractInvoiceId` vs per-order `id` in `createOrder`
+- [x] Custom HTTP clients send a real `User-Agent` header
 - [x] A failure path produces a clean user-visible error (structured `{success:false,error}`, gift row marked `failed`)
 
 ## 6. Validation Notes
@@ -121,9 +123,9 @@ MCP exposes the core flow: `search-products`, `get-product-details`,
 `buy-products`, `get-invoice-by-id`, and order updates. REST is acceptable when
 the app needs custom programmatic control, but MCP is the fastest path and is
 explicitly recommended by the hackathon page. NOTE: the current code uses a
-REST shape against the placeholder base `https://api-bitrefill.com/v2`; the real
-host is `api.bitrefill.com`. Endpoint paths in `lib/bitrefill.ts` are marked
-`// TODO: verify endpoint` and must be confirmed (or switched to MCP) for live.
+REST shape against `https://api.bitrefill.com/v2`. Endpoint paths in
+`lib/bitrefill.ts` are marked `// TODO: verify endpoint` and must be confirmed
+(or switched to MCP) for live.
 
 ### Test Paths
 
@@ -195,14 +197,14 @@ issues here, not as TODO comments in code.
 
 | ID | Severity | Description | Status | Assigned |
 | --- | --- | --- | --- | --- |
-| I01 | medium | Bitrefill live (non-mock) endpoint paths/shapes unverified; base URL `https://api-bitrefill.com/v2` is a placeholder (real host `api.bitrefill.com` / MCP). Marked `// TODO: verify endpoint`. Fully mitigated for the demo by `BITREFILL_MOCK=true`. | open | Human |
+| I01 | medium | Bitrefill live (non-mock) endpoint paths/shapes implemented from the published REST docs (`GET /products/search`, `POST /invoices`, `GET /orders/{id}`, `GET /ping`) but not yet verified against the live API with real credentials. Fully mitigated for the demo by `BITREFILL_MOCK=true`. | open | Human |
 | I02 | high | Build prompt missing | resolved | App built from provided spec. |
 | I03 | high | No app source files / `package.json` | resolved | All source present and building. |
 | I04 | medium | Test credits may not be provisioned for the Bitrefill account | open | Human |
-| I05 | high | Submission wants a real autonomous Bitrefill purchase with delivery polling + redemption info (MCP preferred); current build is mock-first REST without polling/redemption | open | Human/Claude |
+| I05 | high | Real autonomous Bitrefill purchase with delivery polling + redemption info is now implemented (live REST in `lib/bitrefill.ts`); remaining work is to verify it end-to-end against the live API with real creds/test credits | code complete; pending live verification | Human/Claude |
 | I06 | low | Confirm exact local submission deadline with organizers | open | Human |
 | I07 | low | Creator auth is email-match only (by design, hackathon MVP) | open by design | n/a |
-| I08 | low | `lib/bitrefill.ts` `fetchWithTimeout` sets no `User-Agent` header (matters for live REST) | open | Human/Claude |
+| I08 | low | `lib/bitrefill.ts` `fetchWithTimeout` sets no `User-Agent` header (matters for live REST) | resolved | Added `BITREFILL_USER_AGENT` and send it on Bitrefill requests. |
 
 ## 10. Handoff Protocol
 
@@ -235,8 +237,8 @@ either AI/email key is omitted the flow still completes (deterministic selection
 IMPORTANT GAP FOR SUBMISSION: per Section 7, the hackathon wants a real
 (non-mock) autonomous purchase with delivery polling and redemption info,
 preferably via the Bitrefill eCommerce MCP. The current build implements the
-simpler spec'd REST flow (mock-first, placeholder host, no polling/redemption).
-Closing that — switching `lib/bitrefill.ts` to the real MCP/REST host, adding
+simpler spec'd REST flow (mock-first, REST endpoint paths unverified, no polling/redemption).
+Closing that — switching `lib/bitrefill.ts` to MCP or confirmed REST endpoints, adding
 order-status polling on `orders[0].status === "delivered"` /
 `redemption_available`, surfacing `redemption_info`, and running Test Path A or
 B — is the remaining work to be submission-grade (tracked as T05/I05). It needs

@@ -3,6 +3,24 @@
 
 export type BitrefillProduct = { id: string; name: string; slug: string; type: string; countryCode: string; currency: string; denominations: number[]; description?: string }
 export type AIGiftSelection = { productId: string; productName: string; amount: number; reasoning: string }
+
+// Redemption details extracted from a delivered Bitrefill order. Different
+// products expose different fields, so all are optional.
+export type BitrefillRedemption = {
+  code?: string
+  pin?: string
+  link?: string
+  barcode?: string
+  instructions?: string
+}
+
+// Result of creating (and, in live mode, polling to delivery) a Bitrefill order.
+export type BitrefillOrderResult = {
+  orderId: string
+  giftCode: string
+  status: string
+  redemption?: BitrefillRedemption
+}
 export type GiftRequest = { description: string; recipientName: string; recipientEmail: string; budgetEuros: number }
 export type GiftResult = { success: boolean; giftId?: string; productName?: string; error?: string }
 export type RaffleCreateInput = { title: string; occasion: string; budgetEuros: number; numWinners: number; endAt?: string; creatorEmail: string }

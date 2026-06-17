@@ -44,10 +44,24 @@ export const config = {
     return process.env.BITREFILL_API_SECRET ?? ""
   },
   get bitrefillBase(): string {
-    return process.env.BITREFILL_API_BASE ?? "https://api-bitrefill.com/v2"
+    return process.env.BITREFILL_API_BASE ?? "https://api.bitrefill.com/v2"
   },
   get bitrefillMock(): boolean {
     return process.env.BITREFILL_MOCK === "true"
+  },
+  // Payment method for live (non-mock) Bitrefill orders. "balance" pays from
+  // account credits (requires balanceCurrency); a crypto method like
+  // "usdc_base" returns a payment link instead.
+  get bitrefillPaymentMethod(): string {
+    return process.env.BITREFILL_PAYMENT_METHOD ?? "balance"
+  },
+  get bitrefillBalanceCurrency(): string {
+    return process.env.BITREFILL_BALANCE_CURRENCY ?? "EUR"
+  },
+  // Bitrefill is fronted by Cloudflare, which returns 403 without a real
+  // User-Agent header, so every request sends one.
+  get bitrefillUserAgent(): string {
+    return process.env.BITREFILL_USER_AGENT ?? "Giftr/1.0 (+https://github.com/Heinrich-Kemler/Giftr)"
   },
   get baseUrl(): string {
     return process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"
