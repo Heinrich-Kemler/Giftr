@@ -9,6 +9,7 @@ import Spinner from "@/components/ui/Spinner"
 
 type RaffleManageProps = {
   raffleId: string
+  manageToken: string
 }
 
 // Shape returned by GET /api/raffle/<id>.
@@ -46,7 +47,7 @@ function formatEuros(cents: number): string {
   }).format(cents / 100)
 }
 
-export default function RaffleManage({ raffleId }: RaffleManageProps): JSX.Element {
+export default function RaffleManage({ raffleId, manageToken }: RaffleManageProps): JSX.Element {
   const [stage, setStage] = useState<Stage>("gate")
   const [creatorEmail, setCreatorEmail] = useState<string>("")
 
@@ -82,6 +83,10 @@ export default function RaffleManage({ raffleId }: RaffleManageProps): JSX.Eleme
     async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
       event.preventDefault()
       if (gateLoading) return
+      if (manageToken === "") {
+        setGateError("This private manage link is missing its access token.")
+        return
+      }
       setGateLoading(true)
       setGateError("")
       try {
@@ -105,7 +110,7 @@ export default function RaffleManage({ raffleId }: RaffleManageProps): JSX.Eleme
         setGateLoading(false)
       }
     },
-    [gateLoading, raffleId],
+    [gateLoading, manageToken, raffleId],
   )
 
   const handleConfirmDraw = useCallback(async (): Promise<void> => {
@@ -117,7 +122,7 @@ export default function RaffleManage({ raffleId }: RaffleManageProps): JSX.Eleme
       const res = await fetch(`/api/raffle/${raffleId}/draw`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ creatorEmail: creatorEmail.trim() }),
+        body: JSON.stringify({ creatorEmail: creatorEmail.trim(), manageToken }),
       })
       if (res.ok) {
         const data = (await res.json()) as { winners: Winner[] }
@@ -127,7 +132,7 @@ export default function RaffleManage({ raffleId }: RaffleManageProps): JSX.Eleme
         return
       }
       if (res.status === 403) {
-        setDrawError("That email does not match the creator.")
+        setDrawError("That private manage link or creator email is not authorized.")
         setDrawing(false)
         return
       }
@@ -151,7 +156,7 @@ export default function RaffleManage({ raffleId }: RaffleManageProps): JSX.Eleme
       setDrawError("Network error. Please try again.")
       setDrawing(false)
     }
-  }, [creatorEmail, drawing, raffleId])
+  }, [creatorEmail, drawing, manageToken, raffleId])
 
   if (stage === "gate") {
     return (
@@ -163,7 +168,8 @@ export default function RaffleManage({ raffleId }: RaffleManageProps): JSX.Eleme
           Manage giveaway
         </h1>
         <p className="mt-2 text-gray-500">
-          Enter the email you used to create this giveaway to view its dashboard.
+          Enter the email you used to create this giveaway. The private manage
+          link is also required to draw winners.
         </p>
         <form onSubmit={handleGateSubmit} className="mt-6 space-y-5">
           <div className="space-y-2">

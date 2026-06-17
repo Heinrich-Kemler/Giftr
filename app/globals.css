@@ -2,10 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Brand tokens (mirrors Brandguide/Giftr_Brand_Kit/06-tokens/giftr-tokens.css).
+   Inlined so the build never depends on a path outside app/components. */
+:root {
+  --giftr-primary-teal: #14b8a6;
+  --giftr-aqua: #06b6d4;
+  --giftr-sky-blue: #168de2;
+  --giftr-tangerine: #ff7a00;
+  --giftr-accent-orange: #ffa24d;
+  --giftr-navy: #0f172a;
+  --giftr-slate-700: #334155;
+  --giftr-slate-500: #64748b;
+  --giftr-slate-300: #cbd5e1;
+  --giftr-slate-200: #e2e8f0;
+  --giftr-slate-100: #f1f5f9;
+  --giftr-soft-mint: #e6faf5;
+  --giftr-success: #22c55e;
+  --giftr-pending: #f59e0b;
+  --giftr-error: #ef4444;
+  --giftr-white: #ffffff;
+
+  /* Semantic */
+  --ink: var(--giftr-navy);
+  --surface: var(--giftr-white);
+}
+
 @layer base {
   body {
-    background-color: #ffffff;
-    color: #111111;
+    background-color: var(--surface);
+    color: var(--ink);
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;

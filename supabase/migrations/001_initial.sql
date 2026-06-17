@@ -12,6 +12,7 @@ create table if not exists raffles (
   num_winners int not null default 1,
   end_at timestamptz,
   creator_email text not null,
+  manage_token_hash text not null,
   status text not null default 'active',
   created_at timestamptz default now()
 );
@@ -49,3 +50,15 @@ create table if not exists gifts (
 -- Helpful indexes for the most common lookups.
 create index if not exists idx_raffle_entries_raffle_id on raffle_entries (raffle_id);
 create index if not exists idx_gifts_raffle_id on gifts (raffle_id);
+
+-- Defense in depth: this app routes all data access through server-side API
+-- handlers using the service role. Browser clients should not read or mutate
+-- participant emails, gift codes, or creator metadata directly with the anon
+-- key.
+alter table raffles enable row level security;
+alter table raffle_entries enable row level security;
+alter table gifts enable row level security;
+
+revoke all on table raffles from anon, authenticated;
+revoke all on table raffle_entries from anon, authenticated;
+revoke all on table gifts from anon, authenticated;

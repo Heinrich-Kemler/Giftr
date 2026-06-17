@@ -4,17 +4,29 @@
 // purchase for one winner is recorded and does not abort the overall draw.
 
 import { NextResponse } from "next/server"
+import { randomInt } from "node:crypto"
 import { z } from "zod"
 import { getServiceClient } from "@/lib/supabase"
 import { searchProducts, createOrder } from "@/lib/bitrefill"
 import { selectGift } from "@/lib/ai"
 import { sendRaffleWinnerEmail, sendRaffleCreatorSummary } from "@/lib/email"
+import {
+  checkRateLimit,
+  getClientIp,
+  hashSecretToken,
+  isValidUuid,
+  jsonResponse,
+  maskEmail,
+  normalizeEmail,
+  safeCompareHash,
+} from "@/lib/security"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
 const drawSchema = z.object({
   creatorEmail: z.string().email(),
+  manageToken: z.string().min(32),
 })
 
 interface RaffleEntry {
@@ -40,53 +52,62 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-// Mask an email address, keeping the first character of the local part and the
-// full domain, e.g. 'alice@gmail.com' becomes 'a***@gmail.com'.
-function maskEmail(email: string): string {
-  const atIndex = email.indexOf("@")
-  if (atIndex <= 0) {
-    return email
-  }
-  const first = email.slice(0, 1)
-  const domain = email.slice(atIndex)
-  return first + "***" + domain
-}
-
 export async function POST(
   req: Request,
   { params }: { params: { id: string } },
 ): Promise<NextResponse> {
+  if (!isValidUuid(params.id)) {
+    return jsonResponse({ error: "not found" }, { status: 404 })
+  }
+
+  const rateLimit = checkRateLimit({
+    key: `raffle-draw:${params.id}:${getClientIp(req)}`,
+    limit: 10,
+  })
+  if (!rateLimit.ok) {
+    return jsonResponse(
+      { error: "Too many draw attempts. Please try again shortly." },
+      { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } },
+    )
+  }
+
   let body: unknown
   try {
     body = await req.json()
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
+    return jsonResponse({ error: "Invalid JSON body" }, { status: 400 })
   }
 
   const parsed = drawSchema.safeParse(body)
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 })
+    return jsonResponse({ error: "Invalid request" }, { status: 400 })
   }
 
-  const { creatorEmail } = parsed.data
+  const creatorEmail = normalizeEmail(parsed.data.creatorEmail)
+  const submittedTokenHash = hashSecretToken(parsed.data.manageToken)
   const supabase = getServiceClient()
 
   const { data: raffle, error: raffleError } = await supabase
     .from("raffles")
-    .select("id, title, occasion, budget_cents, num_winners, creator_email, status")
+    .select("id, title, occasion, budget_cents, num_winners, creator_email, manage_token_hash, status")
     .eq("id", params.id)
     .maybeSingle()
 
   if (raffleError || raffle === null) {
-    return NextResponse.json({ error: "not found" }, { status: 404 })
+    return jsonResponse({ error: "not found" }, { status: 404 })
   }
 
-  if (creatorEmail !== raffle.creator_email) {
-    return NextResponse.json({ error: "Not authorized" }, { status: 403 })
+  const storedTokenHash = raffle.manage_token_hash as string | null
+  if (
+    creatorEmail !== normalizeEmail(raffle.creator_email as string) ||
+    storedTokenHash === null ||
+    !safeCompareHash(submittedTokenHash, storedTokenHash)
+  ) {
+    return jsonResponse({ error: "Not authorized" }, { status: 403 })
   }
 
   if (raffle.status !== "active") {
-    return NextResponse.json({ error: "Already drawn" }, { status: 400 })
+    return jsonResponse({ error: "Already drawn" }, { status: 400 })
   }
 
   const occasion = raffle.occasion as string
@@ -101,7 +122,7 @@ export async function POST(
     .eq("raffle_id", params.id)
 
   if (entriesError) {
-    return NextResponse.json({ error: "Failed to load entries" }, { status: 500 })
+    return jsonResponse({ error: "Failed to load entries" }, { status: 500 })
   }
 
   const entries: RaffleEntry[] = (entryRows ?? []).map((row) => ({
@@ -112,7 +133,7 @@ export async function POST(
 
   // Fisher-Yates shuffle.
   for (let i = entries.length - 1; i >= 1; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1))
+    const j = randomInt(0, i + 1)
     const tmp = entries[i]
     entries[i] = entries[j]
     entries[j] = tmp
@@ -148,6 +169,10 @@ export async function POST(
         valueInCents: Math.round(selection.amount * 100),
         email: winner.email,
       })
+
+      if (!order.giftCode || order.orderId === "") {
+        throw new Error("Bitrefill order returned no redeemable gift code")
+      }
 
       const { error: giftError } = await supabase.from("gifts").insert({
         raffle_id: params.id,
@@ -188,7 +213,7 @@ export async function POST(
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unknown error"
       console.log(
-        "[draw] purchase failed for winner " + winner.email + ": " + message,
+        "[draw] purchase failed for winner " + maskEmail(winner.email) + ": " + message,
       )
 
       await supabase.from("gifts").insert({
@@ -218,5 +243,5 @@ export async function POST(
     winners: successfulWinners,
   })
 
-  return NextResponse.json({ winners: resultWinners })
+  return jsonResponse({ winners: resultWinners })
 }

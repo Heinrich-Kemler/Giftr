@@ -6,6 +6,7 @@ import { NextResponse } from "next/server"
 import { config } from "@/lib/config"
 import { getServiceClient } from "@/lib/supabase"
 import { testConnection } from "@/lib/bitrefill"
+import { jsonResponse } from "@/lib/security"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -18,7 +19,7 @@ interface HealthChecks {
 
 interface HealthResponse {
   ok: boolean
-  checks: HealthChecks
+  checks?: HealthChecks
 }
 
 async function checkSupabase(): Promise<boolean> {
@@ -59,7 +60,10 @@ function checkOpenai(): boolean {
 export async function GET(): Promise<NextResponse<HealthResponse>> {
   const [supabase, bitrefill] = await Promise.all([checkSupabase(), checkBitrefill()])
   const openai = checkOpenai()
-  const ok = supabase && bitrefill && openai
+  const ok = supabase && bitrefill
 
-  return NextResponse.json({ ok, checks: { supabase, bitrefill, openai } })
+  return jsonResponse({
+    ok,
+    ...(config.healthDetails ? { checks: { supabase, bitrefill, openai } } : {}),
+  })
 }

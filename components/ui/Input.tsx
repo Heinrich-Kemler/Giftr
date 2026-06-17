@@ -11,7 +11,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   return (
     <input
       ref={ref}
-      className={`w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-[#111111] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black ${className}`.trim()}
+      className={`w-full rounded-lg border border-line bg-white px-4 py-3 text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-brand ${className}`.trim()}
       {...rest}
     />
   )

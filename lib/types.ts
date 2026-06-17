@@ -22,7 +22,21 @@ export type BitrefillOrderResult = {
   redemption?: BitrefillRedemption
 }
 export type GiftRequest = { description: string; recipientName: string; recipientEmail: string; budgetEuros: number }
-export type GiftResult = { success: boolean; giftId?: string; productName?: string; error?: string }
+
+// Result of the personal-gift flow. The optional fields power the "agent
+// timeline" + redemption view on the result screen; they are populated on
+// success and omitted on failure.
+export type GiftResult = {
+  success: boolean
+  giftId?: string
+  productName?: string
+  amount?: number
+  reasoning?: string
+  orderId?: string
+  status?: string
+  redemption?: BitrefillRedemption
+  error?: string
+}
 export type RaffleCreateInput = { title: string; occasion: string; budgetEuros: number; numWinners: number; endAt?: string; creatorEmail: string }
 
 // Status of a raffle. 'active' accepts entries, 'drawn' has selected winners,

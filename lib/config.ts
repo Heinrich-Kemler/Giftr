@@ -66,4 +66,10 @@ export const config = {
   get baseUrl(): string {
     return process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"
   },
+  get healthDetails(): boolean {
+    return process.env.HEALTH_DETAILS === "true" || process.env.NODE_ENV !== "production"
+  },
+  get logDemoGiftCodes(): boolean {
+    return process.env.LOG_DEMO_GIFT_CODES === "true" && process.env.NODE_ENV !== "production"
+  },
 }

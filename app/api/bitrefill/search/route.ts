@@ -5,6 +5,7 @@
 import { NextResponse } from "next/server"
 import { searchProducts } from "@/lib/bitrefill"
 import type { BitrefillProduct } from "@/lib/types"
+import { jsonResponse } from "@/lib/security"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -12,13 +13,13 @@ export const dynamic = "force-dynamic"
 export async function GET(request: Request): Promise<NextResponse<BitrefillProduct[]>> {
   try {
     const { searchParams } = new URL(request.url)
-    const query = searchParams.get("q") ?? ""
-    const country = searchParams.get("country") ?? undefined
-    const currency = searchParams.get("currency") ?? undefined
+    const query = (searchParams.get("q") ?? "").slice(0, 120)
+    const country = searchParams.get("country")?.slice(0, 2).toUpperCase()
+    const currency = searchParams.get("currency")?.slice(0, 3).toUpperCase()
 
     const products = await searchProducts({ query, country, currency })
-    return NextResponse.json(products)
+    return jsonResponse(products)
   } catch {
-    return NextResponse.json([])
+    return jsonResponse([])
   }
 }

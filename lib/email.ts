@@ -42,6 +42,14 @@ function maskEmail(email: string): string {
   return `${visible}${"*".repeat(Math.max(local.length - 1, 1))}${domain}`
 }
 
+function redactedGiftCode(giftCode: string): string {
+  if (config.logDemoGiftCodes) {
+    return giftCode
+  }
+  const suffix = giftCode.slice(-4)
+  return suffix === "" ? "[redacted]" : `[redacted, ending ${suffix}]`
+}
+
 function wrapDocument(innerHtml: string): string {
   return [
     `<div style="margin:0;padding:0;background-color:#f9fafb;">`,
@@ -143,11 +151,9 @@ export async function sendGiftEmail({
     console.log(
       [
         "[email] sendGiftEmail (logged, Resend not configured)",
-        `  to: ${recipientEmail}`,
-        `  subject: ${subject}`,
-        `  occasion: ${occasion}`,
+        `  to: ${maskEmail(recipientEmail)}`,
         `  product: ${productName}`,
-        `  giftCode: ${giftCode}`,
+        `  giftCode: ${redactedGiftCode(giftCode)}`,
       ].join("\n"),
     )
   })
@@ -185,11 +191,9 @@ export async function sendRaffleWinnerEmail({
     console.log(
       [
         "[email] sendRaffleWinnerEmail (logged, Resend not configured)",
-        `  to: ${email}`,
-        `  subject: ${subject}`,
-        `  raffle: ${raffleTitle}`,
+        `  to: ${maskEmail(email)}`,
         `  product: ${productName}`,
-        `  giftCode: ${giftCode}`,
+        `  giftCode: ${redactedGiftCode(giftCode)}`,
       ].join("\n"),
     )
   })
@@ -245,9 +249,7 @@ export async function sendRaffleCreatorSummary({
     console.log(
       [
         "[email] sendRaffleCreatorSummary (logged, Resend not configured)",
-        `  to: ${creatorEmail}`,
-        `  subject: ${subject}`,
-        `  raffle: ${raffleTitle}`,
+        `  to: ${maskEmail(creatorEmail)}`,
         `  winners: ${winnerCount}`,
       ].join("\n"),
     )

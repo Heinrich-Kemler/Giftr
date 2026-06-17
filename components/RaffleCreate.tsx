@@ -145,7 +145,8 @@ export default function RaffleCreate(): JSX.Element {
           Your giveaway is live
         </h2>
         <p className="mt-2 text-gray-500">
-          Share the entry link with participants. Keep the manage link private.
+          Share the entry link with participants. Keep the manage link private;
+          it contains the access token for drawing winners.
         </p>
 
         <div className="mt-6 space-y-4">
@@ -210,6 +211,7 @@ export default function RaffleCreate(): JSX.Element {
               type="number"
               inputMode="numeric"
               min={1}
+              max={500}
               step={1}
               value={budgetEuros}
               onChange={(event) => setBudgetEuros(event.target.value)}
@@ -226,6 +228,7 @@ export default function RaffleCreate(): JSX.Element {
               type="number"
               inputMode="numeric"
               min={1}
+              max={100}
               step={1}
               value={numWinners}
               onChange={(event) => setNumWinners(event.target.value)}

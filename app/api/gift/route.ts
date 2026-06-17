@@ -10,32 +10,45 @@ import { selectGift } from "@/lib/ai"
 import { sendGiftEmail } from "@/lib/email"
 import { getServiceClient } from "@/lib/supabase"
 import type { GiftResult } from "@/lib/types"
+import { checkRateLimit, getClientIp, jsonResponse, normalizeEmail } from "@/lib/security"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
 const giftSchema = z.object({
-  description: z.string().min(10),
-  recipientName: z.string().min(1),
+  description: z.string().trim().min(10).max(500),
+  recipientName: z.string().trim().min(1).max(120),
   recipientEmail: z.string().email(),
   budgetEuros: z.number().min(5).max(200),
 })
 
 export async function POST(request: Request): Promise<NextResponse<GiftResult>> {
+  const rateLimit = checkRateLimit({
+    key: `gift:${getClientIp(request)}`,
+    limit: 20,
+  })
+  if (!rateLimit.ok) {
+    return jsonResponse(
+      { success: false, error: "Too many requests. Please try again shortly." },
+      { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } },
+    )
+  }
+
   let body: unknown
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ success: false, error: "Invalid JSON body" }, { status: 400 })
+    return jsonResponse({ success: false, error: "Invalid JSON body" }, { status: 400 })
   }
 
   const parsed = giftSchema.safeParse(body)
   if (!parsed.success) {
     const error = parsed.error.issues[0]?.message ?? "Invalid request"
-    return NextResponse.json({ success: false, error }, { status: 400 })
+    return jsonResponse({ success: false, error }, { status: 400 })
   }
 
-  const { description, recipientName, recipientEmail, budgetEuros } = parsed.data
+  const { description, recipientName, budgetEuros } = parsed.data
+  const recipientEmail = normalizeEmail(parsed.data.recipientEmail)
   const supabase = getServiceClient()
 
   let giftId: string | null = null
@@ -135,10 +148,15 @@ export async function POST(request: Request): Promise<NextResponse<GiftResult>> 
 
     await supabase.from("gifts").update({ status: "delivered" }).eq("id", giftId)
 
-    return NextResponse.json({
+    return jsonResponse({
       success: true,
       giftId,
       productName: selection.productName,
+      amount,
+      reasoning: selection.reasoning,
+      orderId: order.orderId,
+      status: order.status,
+      redemption: order.redemption,
     })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to create gift"
@@ -148,6 +166,7 @@ export async function POST(request: Request): Promise<NextResponse<GiftResult>> 
         .update({ status: "failed", error_message: message })
         .eq("id", giftId)
     }
-    return NextResponse.json({ success: false, error: message })
+    console.error("[gift] gift creation failed:", message)
+    return jsonResponse({ success: false, error: "Failed to create gift" }, { status: 500 })
   }
 }

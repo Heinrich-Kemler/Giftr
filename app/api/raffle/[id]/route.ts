@@ -4,6 +4,7 @@
 
 import { NextResponse } from "next/server"
 import { getServiceClient } from "@/lib/supabase"
+import { isValidUuid, jsonResponse, maskEmail } from "@/lib/security"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -14,21 +15,15 @@ interface PublicWinner {
   productName: string
 }
 
-// Mask an email for public display, keeping the first character and the domain
-// (e.g. 'alice@gmail.com' becomes 'a***@gmail.com').
-function maskEmail(email: string): string {
-  const atIndex = email.indexOf("@")
-  if (atIndex <= 0) {
-    return email
-  }
-  return email.slice(0, 1) + "***" + email.slice(atIndex)
-}
-
 export async function GET(
   req: Request,
   { params }: { params: { id: string } },
 ): Promise<NextResponse> {
   void req
+
+  if (!isValidUuid(params.id)) {
+    return jsonResponse({ error: "not found" }, { status: 404 })
+  }
 
   const supabase = getServiceClient()
 
@@ -39,7 +34,7 @@ export async function GET(
     .maybeSingle()
 
   if (error || raffle === null) {
-    return NextResponse.json({ error: "not found" }, { status: 404 })
+    return jsonResponse({ error: "not found" }, { status: 404 })
   }
 
   const { count } = await supabase
@@ -64,7 +59,7 @@ export async function GET(
     }))
   }
 
-  return NextResponse.json({
+  return jsonResponse({
     id: raffle.id as string,
     title: raffle.title as string,
     occasion: raffle.occasion as string,
